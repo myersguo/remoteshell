@@ -1,0 +1,8 @@
+[
+    {
+        "id" : 0,
+        "name" : "ls",
+        "shell" : "ls",
+        "method" : "get"
+    },
+]
