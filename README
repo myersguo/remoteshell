@@ -1,0 +1,37 @@
+### 运行  
+make  
+or  
+/bin/sh ./build.sh  
+
+### 设计   
+HTTP SERVER, HANDLER执行SHELL脚本，HANDLE的路径和shell脚本在配置文件中，eg:  
+
+```
+[
+    {
+        "id" : 0,
+        "name" : "ls",
+        "shell" : "ls",
+        "method" : "get"
+    }
+]
+```
+默认开启端口号10240，设置在配置文件app.json中：  
+
+```
+{
+    "port": 10240,
+    "host":"0.0.0.0"
+    "output": false
+}
+
+```
+
+设置output为true是表示将等待shell执行完毕。否则，直接返回OK。  
+
+### 下一步计划   
+
+* shell脚本存储到mysql中  
+* shell脚本执行状态：未执行、正在执行；执行结果：ok,fail存储到redis或mysql中   
+
+
