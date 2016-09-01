@@ -1,6 +1,7 @@
 {
     "port": 10240,
     "host":"0.0.0.0",
-    "output": false
+    "output": false,
+    "logfile" : "/home/work/logs/applogs/remoteshell.log"
 }
 

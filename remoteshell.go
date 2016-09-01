@@ -32,9 +32,10 @@ type Command struct {
 }
 
 type ServerConfig struct {
-	Port   int
-	Host   string
-	Output bool
+	Port    int
+	Host    string
+	Output  bool
+	LogFile string
 }
 
 func GetExecPath() (path string, err error) {
@@ -115,7 +116,15 @@ func getResponse(errno int, errmsg string, data string) ([]byte, error) {
 func ExecShellHandler(shell string, config ServerConfig) func(http.ResponseWriter, *http.Request) {
 	handler := func(res http.ResponseWriter, req *http.Request) {
 		log.Printf("%s %s %s \"%s\"", req.RequestURI, req.RemoteAddr, req.Method, req.UserAgent())
-		cmd := exec.Command("/bin/sh", "-c", shell)
+		req.ParseForm()
+		params, ok := req.Form["params"]
+		var cmdline string
+		if ok {
+			cmdline = shell + " " + strings.Trim(params[0], "")
+		} else {
+			cmdline = shell
+		}
+		cmd := exec.Command("/bin/sh", "-c", cmdline)
 		//result, err := cmd.Output()
 		result := []byte("Done")
 		var err error
@@ -132,11 +141,13 @@ func ExecShellHandler(shell string, config ServerConfig) func(http.ResponseWrite
 					errcode = status.ExitStatus()
 				}
 			}
-			return
 		}
 		res.Header().Set("Custom-Status", fmt.Sprintf("%d", errcode))
 		res.WriteHeader(200)
-		out, err := getResponse(200, "ok", string(result))
+		out, err := getResponse(0, "ok", string(result))
+		if errcode != 0 {
+			out, err = getResponse(errcode, "failed", string(result))
+		}
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
@@ -169,6 +180,13 @@ func main() {
 	if err != nil {
 		fmt.Println("load app config error,err:", err)
 		return
+	}
+	if len(config.LogFile) > 0 {
+		f, err := os.OpenFile(config.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+		defer f.Close()
+		if err == nil {
+			log.SetOutput(f)
+		}
 	}
 	setHandlers(commands, config)
 	address := fmt.Sprintf("%s:%d", config.Host, config.Port)
